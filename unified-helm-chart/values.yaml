@@ -1,7 +1,7 @@
 # -- Used to generate container images
-repository: service-templates
+repository: unified-helm-chart
 # -- Used to generate labels and names
-fullnameOverride: service-template
+fullnameOverride: unified-helm-chart
 
 # -- Object that configures Deployment instance
 deployment:
