@@ -1,0 +1,188 @@
+{{- define "deploymentInstance" -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "service-templates.fullname" . }}
+  labels:
+    {{- include "service-templates.labels" . | nindent 4 }}
+    helm.sh/origin-chart: unified-helm-chart
+spec:
+  {{- with .Values.deployment }}
+  replicas: {{ .replicaCount }}
+  strategy:
+    type: {{ .strategy | default "RollingUpdate" }}
+  {{- if .minReadySeconds }}
+  minReadySeconds: {{ .minReadySeconds }}
+  {{- end }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "service-templates.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "service-templates.selectorLabels" . | nindent 8 }}
+      annotations:
+        {{- if ne .Values.deployment.skipSyncConfigs true }}
+        checksum/config: {{ include (print $.Template.BasePath "/config-map.yaml") . | sha256sum }}
+        {{- end }}
+        {{- if ne .Values.deployment.skipSyncSecrets true }}
+        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+        {{- end }}
+        {{- with .Values.deployment.podAnnotations }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.deployment }}
+      {{- if .topologySpreadConstraints }}
+      topologySpreadConstraints:
+      {{- toYaml .topologySpreadConstraints | nindent 6 }}
+      {{- end }}
+      {{- if .imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml .imagePullSecrets | nindent 8 }}
+      {{- end }}
+      {{- if .serviceAccountName }}
+      serviceAccountName: {{ .serviceAccountName }}
+      {{- end }}
+      {{- if .podSecurityContext }}
+      securityContext:
+        {{- toYaml .podSecurityContext | nindent 8 }}
+      {{- end }}
+      terminationGracePeriodSeconds: {{ .terminationGracePeriod | default 30 }}
+      {{- if .volumes }}
+      volumes:
+      {{ toYaml .volumes | nindent 4 }}
+      {{- end }}
+      {{- if .initContainers }}
+      initContainers:
+      {{- range $initContainer := .initContainers }}
+      - name: {{ $initContainer.name }}
+        image: {{ $initContainer.image }}
+        {{- if $initContainer.envFrom }}
+        envFrom:
+          {{ toYaml $initContainer.envFrom | nindent 12 }}
+        {{- end }}
+        {{- if or $initContainer.env $.Values.deployment.gcpEnvVars }}
+        env:
+          {{- if $.Values.deployment.gcpEnvVars -}}
+          {{ toYaml $.Values.deployment.gcpEnvVars | nindent 8 -}}
+          {{- end }}
+          {{- if  $initContainer.env -}}
+          {{ toYaml $initContainer.env | nindent 12 }}
+          {{- end }}
+        {{- end }}
+        {{- if $initContainer.command }}
+        command: {{ $initContainer.command }}
+        {{- end }}
+        {{- if $initContainer.args }}
+        args:
+        {{ range $initContainer.args -}}
+        - {{ . }}
+        {{ end -}}
+        {{- end }}
+        {{- if $initContainer.volumeMounts }}
+        volumeMounts:
+        {{- range $mount := $initContainer.volumeMounts }}
+          - name: {{ $mount.name }}
+            mountPath: {{ $mount.path }}
+        {{- end }}
+        {{- end }}
+      {{- end }}
+      {{- end }}
+      containers:
+        {{- range $container := .containers }}
+        - name: {{ $container.name }}
+          {{- if $container.securityContext }}
+          securityContext:
+            {{- toYaml $container.securityContext | nindent 12 }}
+          {{- end }}
+          {{- if $.Values.deployment.image.repository }}
+          image: "{{ $.Values.deployment.image.repository }}:{{ $.Values.deployment.image.tag }}"
+          {{ else }}
+          image: "{{ $.Values.repository }}:{{ $.Chart.Version }}"
+          {{- end }}
+          imagePullPolicy: {{ $.Values.deployment.image.pullPolicy | default "IfNotPresent" }}
+          {{- if $container.command }}
+          command: {{ $container.command }}
+          {{- end }}
+          {{- if $container.args }}
+          args: {{ $container.args }}
+          {{- end }}
+          {{- if $container.envFrom }}
+          envFrom:
+            {{ toYaml $container.envFrom | nindent 12 }}
+          {{- end }}
+          {{- if or $container.env $.Values.deployment.gcpEnvVars }}
+          env:
+            {{- if $.Values.deployment.gcpEnvVars -}}
+            {{ toYaml $.Values.deployment.gcpEnvVars | nindent 12 -}}
+            {{- end }}
+            {{- if $container.env -}}
+            {{ toYaml $container.env | nindent 12 }}
+            {{- end }}
+          {{- end }}
+          ports:
+          {{- range $port := $container.ports }}
+            - name: {{ $port.name }}
+              containerPort: {{ $port.containerPort }}
+              protocol: {{ $port.protocol }}
+          {{- end }}
+          {{- if $container.volumeMounts }}
+          volumeMounts:
+          {{- range $mount := $container.volumeMounts }}
+            - name: {{ $mount.name }}
+              mountPath: {{ $mount.path }}
+          {{- end }}
+          {{- end }}
+          {{- if $container.lifeCycle }}
+          lifecycle:
+          {{- toYaml $container.lifeCycle | nindent 12 }}
+          {{- end }}
+          {{- if $container.startupProbe }}
+          startupProbe:
+          {{- toYaml $container.startupProbe | nindent 12 }}
+          {{- end }}
+          {{- if $.Values.deployment.livenessProbe }}
+          livenessProbe:
+            httpGet:
+              path: {{ default "/health" $.Values.deployment.livenessProbe.httpPath }}
+              port: http
+            initialDelaySeconds: {{ default 25 $.Values.deployment.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ default 10 $.Values.deployment.livenessProbe.periodSeconds }}
+            timeoutSeconds: {{ default 5 $.Values.deployment.livenessProbe.timeoutSeconds }}
+            successThreshold: {{ default 1 $.Values.deployment.livenessProbe.successThreshold }}
+            failureThreshold: {{ default 5 $.Values.deployment.livenessProbe.failureThreshold }}
+          {{- end }}
+          {{- if $.Values.deployment.readinessProbe }}
+          readinessProbe:
+            httpGet:
+              path: {{ default "/health" $.Values.deployment.readinessProbe.httpPath }}
+              port: http
+            initialDelaySeconds: {{ default 25 $.Values.deployment.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ default 10 $.Values.deployment.readinessProbe.periodSeconds }}
+            timeoutSeconds: {{ default 5 $.Values.deployment.readinessProbe.timeoutSeconds }}
+            successThreshold: {{ default 1 $.Values.deployment.readinessProbe.successThreshold }}
+            failureThreshold: {{ default 5 $.Values.deployment.readinessProbe.failureThreshold }}
+          {{- end }}
+          resources:
+            {{- toYaml $.Values.deployment.resources | nindent 12 }}
+        {{- end }}
+      {{- if .nodeSelector }}
+      nodeSelector:
+        {{- toYaml .nodeSelector | nindent 8 }}
+      {{- end }}
+      {{- if .affinity }}
+      affinity:
+        {{- toYaml .affinity | nindent 8 }}
+      {{- end }}
+      {{- if .tolerations }}
+      tolerations:
+        {{- toYaml .tolerations | nindent 8 }}
+      {{- end }}
+{{- end -}}
+{{- end -}}
+
+{{- if .Values.deployment.test_enabled -}}
+    {{- include "deploymentInstance" . -}}
+{{- end -}}

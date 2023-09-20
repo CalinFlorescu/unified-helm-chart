@@ -1,0 +1,34 @@
+renders a valid database instance resource:
+  1: |
+    apiVersion: clouds.database.org/v1alpha1
+    kind: PostgreSQLInstance
+    metadata:
+      labels:
+        app.kubernetes.io/instance: RELEASE-NAME
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: service-template
+        app.kubernetes.io/version: 1.16.0
+        helm.sh/chart: service-templates-0.3.10
+        helm.sh/origin-chart: unified-helm-chart
+      name: service-template
+      namespace: null
+    spec:
+      compositionSelector:
+        matchLabels:
+          crossplane.io/xrd: xpostgresqlinstances.clouds.database.org
+          provider: gcp
+      parameters:
+        backup:
+          enabled: true
+          location: europe-west3
+          pointInTimeRecoveryEnabled: true
+          startTime: start_time
+        connectionSecretName: null
+        databaseFlags:
+          - name: test_flag
+            value: test_flag_value
+        maxDiskSize: 0
+        name: null
+        namespace: null
+        storageAutoResizeLimit: 0
+        tier: db-custom-4-1000

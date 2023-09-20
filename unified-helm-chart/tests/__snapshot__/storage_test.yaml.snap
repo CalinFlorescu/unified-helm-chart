@@ -1,0 +1,30 @@
+renders a valid storage instance resource:
+  1: |
+    apiVersion: clouds.storage.org/v1alpha1
+    kind: BucketInstance
+    metadata:
+      labels:
+        app.kubernetes.io/instance: RELEASE-NAME
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: service-template
+        app.kubernetes.io/version: 1.16.0
+        helm.sh/chart: service-templates-0.3.10
+        helm.sh/origin-chart: unified-helm-chart
+      name: service-template
+      namespace: null
+    spec:
+      compositionSelector:
+        matchLabels:
+          crossplane.io/xrd: xbucketinstances.clouds.storage.org
+          provider: gcp
+      parameters:
+        bucket:
+          cors:
+            maxAge: 1000
+            methods: GET, POST
+            origins: www.test.com
+            responseHeaders: '*'
+          enableVersioning: false
+          location: null
+          name: null
+        namespace: null

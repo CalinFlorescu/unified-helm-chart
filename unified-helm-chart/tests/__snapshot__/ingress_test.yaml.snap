@@ -1,0 +1,30 @@
+renders a valid ingress instance resource:
+  1: |
+    apiVersion: networking.k8s.io/v1
+    kind: Ingress
+    metadata:
+      annotations:
+        test: test-value
+      labels:
+        app.kubernetes.io/instance: RELEASE-NAME
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: service-template
+        app.kubernetes.io/version: 1.16.0
+        helm.sh/chart: service-templates-0.3.10
+      name: service-template
+    spec:
+      rules:
+        - host: test.domain
+          http:
+            paths:
+              - backend:
+                  service:
+                    name: service-template
+                    port:
+                      number: 80
+                path: /test
+                pathType: Prefix
+      tls:
+        - hosts:
+            - test.domain
+          secretName: secret

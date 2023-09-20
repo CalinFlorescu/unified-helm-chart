@@ -1,0 +1,10 @@
+{{- define "deployment" -}}
+    {{- $override := include "deploymentOverride" . | fromYaml -}}
+    {{- $base := include "deploymentInstance" . | fromYaml -}}
+    {{- if $override -}}
+        {{- $merged := mustMergeOverwrite (dict) $base $override -}}
+        {{- toYaml $merged -}}
+    {{- else -}}
+        {{- toYaml $base -}}
+    {{- end -}}
+{{- end -}}

@@ -1,0 +1,98 @@
+suite: Deployment tests
+templates:
+  - deployment/deployment.yaml
+tests:
+  - it: renders a valid deployment instance resource
+    values:
+    - ./values/deployment.yaml
+    asserts:
+    - isKind:
+        of: Deployment
+    - matchSnapshot: {}
+
+  - it: configures correctly the deployment name
+    values:
+    - ./values/deployment.yaml
+    asserts:
+    - equal:
+        path: metadata.name
+        value: service-template
+
+  - it: configures the init container
+    values:
+    - ./values/deployment.yaml
+    asserts:
+    - contains:
+        path: spec.template.spec.initContainers
+        content:
+          name: test-init-container
+          image: nginx
+          command: ["bash"]
+          args: ["script.sh"]
+          env:
+          - name: user
+            value: test-user
+          volumeMounts:
+          - mountPath: /path
+            name: volume
+
+  - it: configures the container
+    values:
+    - ./values/deployment.yaml
+    asserts:
+    - contains:
+        path: spec.template.spec.containers
+        content:
+          args:
+            - script.sh
+          command:
+          - bash
+          env:
+          - name: user
+            value: test-user
+          image: test:2
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            failureThreshold: 5
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 25
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 5
+          name: test-container
+          ports:
+          - name: http
+            containerPort: 8080
+            protocol: TCP
+          readinessProbe:
+            failureThreshold: 5
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 25
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 5
+          resources:
+            requests:
+              cpu:
+              memory:
+            limits:
+              cpu:
+              memory:
+          volumeMounts:
+          - mountPath: /path
+            name: volume
+          startupProbe:
+            httpGet:
+              path: /path
+              port: 8080
+            failureThreshold: 30
+            periodSeconds: 10
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                  - bash

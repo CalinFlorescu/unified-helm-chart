@@ -1,0 +1,30 @@
+renders a valid scaler instance resource:
+  1: |
+    apiVersion: keda.sh/v1alpha1
+    kind: ScaledObject
+    metadata:
+      labels:
+        app.kubernetes.io/instance: RELEASE-NAME
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: service-template
+        app.kubernetes.io/version: 1.16.0
+        helm.sh/chart: service-templates-0.3.10
+        helm.sh/origin-chart: unified-helm-chart
+      name: service-template
+    spec:
+      cooldownPeriod: 300
+      maxReplicaCount: null
+      minReplicaCount: null
+      pollingInterval: 30
+      scaleTargetRef:
+        apiVersion: api/v1
+        kind: Deployment
+        name: TestDeployment
+      triggers:
+        - metadata:
+            metricName: http_request_total
+            query: whatevermetrics
+            serverAddress: http://prometheus-prometheus.monitoring.svc.cluster.local:9090
+            threshold: 3
+          metricType: Value
+          type: prometheus

@@ -1,0 +1,5 @@
+{{- define "deploymentOverride" -}}
+# This should follow the structure of the resource you want to override
+# If you decide to define a module like this, the content of it will override
+# or get appended to the initial template
+{{- end -}}

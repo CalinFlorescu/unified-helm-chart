@@ -1,0 +1,73 @@
+# -- Used to generate container images
+repository: service-templates
+# -- Used to generate labels and names
+fullnameOverride: service-template
+
+# -- Object that configures Deployment instance
+deployment:
+  # -- Define minimum number of seconds for which the pod should be running without crushing before being considered healthy
+  minReadySeconds:
+  # -- Decide if the pods should not be restarted if you have secrets used as env vars and they are updated
+  skipSyncSecrets: true
+  # -- Decide if the pods should be restarted if you have configs used as env vars and they are updated
+  skipSyncConfigs: true
+  # -- Update strategy
+  strategy:
+  # -- Number of replicas that will be created
+  replicaCount:
+  # -- Image pull secrets
+  imagePullSecrets:
+  # -- Security context in which the pod should run
+  podSecurityContext:
+  # -- SA name that the pod should use
+  serviceAccountName:
+  # -- Override default container image format
+  image:
+    # -- Image repository
+    repository: ""
+    # -- Image tag
+    tag: ""
+    # -- Variable used to control when the image should be fetched
+    pullPolicy:
+  # -- Pod annotations
+  podAnnotations:
+  # -- Specify node affinity
+  affinity:
+  # -- Sepcify node tolerations
+  tolerations: []
+  # -- Specify node selector
+  nodeSelector:
+  # -- Specify maximum umber of allowed unavailable pods
+  maxUnavailablePods:
+  # -- Define volumes to be attached to the pods (https://kubernetes.io/docs/concepts/storage/volumes/)
+  volumes:
+  # -- Specify termination grace period
+  terminationGracePeriod:
+  # -- List of init containers that should be created
+  initContainers: []
+  # -- Define topology spread constraints that will be applied
+  topologySpreadConstraints: []
+  # -- Configure container's resource request and limits
+  resources:
+    # -- Resources that the container is guaranteed to get
+    requests:
+      # -- Memory that the container is guaranteed to get
+      memory:
+      # -- CPU that the container is guaranteed to get
+      cpu:
+    # -- Defines a hard ceiling on resource use
+    limits:
+      # -- Defines a hard ceiling on how much Memory time that the container can use
+      memory:
+      # -- Defines a hard ceiling on how much CPU time that the container can use
+      cpu:
+  # -- Define env vars for gcp cloud (they are going to be merged with the default ones defined under container args)
+  gcpEnvVars: []
+  # -- Definition of the liveness probe
+  livenessProbe: {}
+  # -- Definition of the readiness probe
+  readinessProbe: {}
+  # -- List of containers that should be created in the pod
+  containers: []
+  # -- Variable used for testing purposes
+  test_enabled: false
